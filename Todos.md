@@ -3,7 +3,7 @@
 ## Stages
 
 - [x] Execute a program
-- [ ] Wireup stdout & stderr
+- [x] Wireup stdout & stderr
 - [ ] Handle exit codes
 - [ ] Filesystem isolation
 - [ ] Process isolation
