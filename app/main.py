@@ -5,11 +5,13 @@ def main():
     command = sys.argv[3]
     args = sys.argv[4:]
     
-    completed_subprocess: subprocess.CompletedProcess = subprocess.run(
+    done_subprocess: subprocess.CompletedProcess = subprocess.run(
         [command, *args],
         stdout=sys.stdout,
         stderr=sys.stderr
     )
+
+    sys.exit(done_subprocess.returncode)
 
 if __name__ == "__main__":
     main()
