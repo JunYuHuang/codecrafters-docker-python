@@ -26,9 +26,8 @@
             ```
             mydocker run alpine:latest /usr/local/bin/docker-explorer exit 1
             ```
-        - terminal output printed:
+        - terminal output printed (empty)
             ```
-            hey
             ```
 - PEDAC: Data Structures And Algorithms
     - get (sub) program `argv[3]`'s exit code

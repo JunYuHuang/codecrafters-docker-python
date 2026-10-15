@@ -5,6 +5,6 @@
 - [x] Execute a program
 - [x] Wireup stdout & stderr
 - [x] Handle exit codes
-- [ ] Filesystem isolation
+- [x] Filesystem isolation
 - [ ] Process isolation
 - [ ] Fetch an image from the Docker Registry
