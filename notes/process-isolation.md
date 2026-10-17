@@ -70,11 +70,13 @@ git push origin master
                 - `clone()`: call with 1+ flags
                 - `setns()`: calling process joins namespace
                 - `unshare()`: calling process moves to new namespace
+                    - calling with `CLONE_NEWPID` flag requires `CAP_SYS_ADMIN` capability
+                    - calling to create a new user namespace + new PID namespace in same call does NOT require `CAP_SYS_ADMIN` capability!
             - destroyed when last process of a namespace exits
         - PID namespaces:
             - isolate process IDs (PIDs)
             - flag: `CLONE_NEWPID`
-            - a
+        - user namespaces
     - Linux cgroups
         - TODO
 - PEDAC: Examples

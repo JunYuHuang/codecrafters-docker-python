@@ -25,7 +25,7 @@ def main():
     # (https://man7.org/linux/man-pages/man2/unshare.2.html).
     # First process (e.g., `command`) spawned by this main process will
     # be the `init` process (i.e., have PID 1) in the new namespace.
-    os.unshare(os.CLONE_NEWPID)
+    os.unshare(os.CLONE_NEWPID | os.CLONE_NEWUSER)
 
     # Create isolated temp root dir "chroot jail" for running `command`
     command_root_dir = make_temp_root_dir(command)
