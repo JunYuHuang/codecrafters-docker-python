@@ -62,7 +62,24 @@ git push origin master
         - runs a live Docker container of the image `argv[2]`
         - live container runs the program `argv[3]` with argument(s) `argv[4:]`
     - questions
-        - TODO
+        - how to know which manifest type a Docker image uses?
+            - check HTTP GET Response's `Content-Type` field value
+            - types (2):
+                - OCI image manifest / v1
+                - image manifest v2 ?
+        - order of image layers to download and apply to client program's local file system?
+            - order in which they appear in the HTTP GET Response array of JSON objects?
+        - how to download a Docker image layer?
+            - send HTTP GET Request with params?
+        - how to check with a certain Docker image with a tag exists in the Docker Registry?
+            - get bearer token from `auth.docker.io/token` first
+            - send HTTP `GET /v2/<name>/manifests/<reference>` to Docker Registry HTTP API v2 endpoint at `registry.hub.docker.com`
+                - Docker server returns HTTP Response 404 if image `<name>` doesn't exist
+                - Docker server returns HTTP Response 404 if image `<name>` with tag `<reference>` doesn't exist
+        - Docker Registry appears to only have image manifests of type `application/vnd.oci.image.manifest.v1+json`?
+            - test for Docker images `Alpine`, `Busybox`, `Ubuntu`
+        - how to read and apply a Docker image layer?
+            - TODO
 - PEDAC: Examples
     - ex.1 program execution
         - run program:
@@ -77,10 +94,10 @@ git push origin master
             ```
             hey
             ``` 
-    - ex.2 HTTP exchange flow between program and Docker registry
+    - ex.2 HTTP exchange flow between program and Docker registry (for OCI image manifest)
         - program -> registry: send HTTP Request to get bearer token
             ```
-            GET /token?service=registry.docker.io&scope=repository%3Alibrary%2Falphine%3Apull HTTP/2
+            GET /token?service=registry.docker.io&scope=repository%3Alibrary%2Falpine%3Apull HTTP/2
             Host: auth.docker.io
             User-Agent: yaak
             Accept: */*
@@ -239,8 +256,74 @@ git push origin master
         - run program `argv[3]` with arguments `argv[4:]` as a new process
         - ...
     - contact Docker Hub
-        - TODO
+        - get bearer token from Docker Registry HTTP API V2
+            - send HTTP GET Request to `auth.docker.io/token`
+                - query params fields & example values
+                    - `service` = `registry.docker.io`
+                    - `scope` = `repository:library/<image>:pull`
+                        - e.g., `repository:library/alpine:pull`
+            - get HTTP GET Response
+                - if response is not 200 OK, exit program with error
+                - set string `api_token` to response's `token` field value
     - read image manifest
-        - TODO
+        - send HTTP GET Request to: `registry.hub.docker.com/v2/library/<image>/manifest/<tag>`
+            - `<image>` is set from `argv[2]`'s 1st part before `:` char separator
+            - `<tag>` is set from `argv[2]`'s 2nd part after `:` char separator
+            - e.g., `registry.hub.docker.com/v2/library/alpine/manifest/latest`
+            - set header `Authorization` to `Bearer <api_token>`
+                `<api_token>` is set from local variable `api_token`
+            - optional: set header `Accept` to `application/vnd.oci.image.manifest.v1+json`
+        - get HTTP GET Response
+            - if response is 401 unauthorized,
+                - get bearer token from Docker Registry again
+                - update `api_token` and try GET Request again
+            - if response is 404 not found,
+                - if JSON response `errors.code` is `MANIFEST_UNKNOWN`,
+                    - exit program with error that indicates supplied image `<tag>` is invalid
+                - if JSON respnose `errors.code` is ?,
+                    - exit program with error that indicates supplie image `<name>` is invalid
+            - if response is not 200 OK,
+                - exit program with error that indicates unknown error
+            - HTTP Response field `content-type` should be `application/vnd.oci.image.index.v1+json`
+            - from Response payload (JSON format), get first `amd64` CPU architecture based image manifest from array
+                - usually the first item in JSON array (i.e., at index 0)
+                - assumes all items in JSON array `manifests` have:
+                    - `digest`: value is prefixed with `sha256:`
+                    - `mediaType`: `application/vnd.oci.image.index.v1+json`
+                    - `platform` property with properties:
+                        - `architecture`
+                        - `os`
+                    - `size`
+                - set string `manifest_hash` to response payload's `manifests[0].digest`
+        - send HTTP GET Request to: `registry.hub.docker.com/v2/library/<image>/blobs/<manifest_hash>`
+            - `<image>` is set from `argv[2]`'s 1st part before `:` char separator
+            - `<manifest_hash>` is set from `manifest_hash`
+            - e.g., `registry.hub.docker.com/v2/library/alpine/blobs/sha256:c26612752c78b18faacd63c7d50f4592c2e7b0f25e0e20e82bd74e465c57ab0d`
+            - set header `Authorization` to `Bearer <api_token>`
+                `<api_token>` is set from local variable `api_token`
+            - optional: set header `Accept` to `application/vnd.oci.image.manifest.v1+json`
+        - get HTTP GET Response
+            - if response is 401 unauthorized,
+                - get bearer token from Docker Registry again
+                - update `api_token` and try GET Request again
+            - if response is not 200 OK,
+                - exit program with error that indicates unknown error
+            - set array `image_layers` to response (JSON) payload's `layers` array property
     - download and extract layers from the image manifest
-        - TODO
+        - for each layer object / hashmap `layer` in `image_layers`,
+            - send HTTP GET Request to: `registry.hub.docker.com/v2/library/<image>/blobs/<layer_hash>`
+                - `<image>` is set from `argv[2]`'s 1st part before `:` char separator
+                - `<layer_hash>` is set from string `layer.digest`
+                - e.g., `registry.hub.docker.com/v2/library/alpine/blobs/sha256:c26612752c78b18faacd63c7d50f4592c2e7b0f25e0e20e82bd74e465c57ab0d`
+                - set header `Authorization` to `Bearer <api_token>`
+                    `<api_token>` is set from local variable `api_token`
+                - optional: set header `Accept` to `application/vnd.oci.image.manifest.v1+json`
+            - get / download HTTP GET Response
+                - if response is 401 unauthorized,
+                    - get bearer token from Docker Registry again
+                    - update `api_token` and try GET Request again
+                - if response is not 200 OK,
+                    - exit program with error that indicates unknown error
+            - decompress downloaded file with `gzip`
+            - unarchive downloaded file with `tar`
+            - somehow apply download layer to local filesystem at directory root?
