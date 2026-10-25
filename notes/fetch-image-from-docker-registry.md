@@ -255,6 +255,13 @@ git push origin master
         - download and extract layers from the image manifest
         - run program `argv[3]` with arguments `argv[4:]` as a new process
         - ...
+    - Docker Registry HTTP API V2 helper functions
+        - `get_bearer_token(params: hashmap[string -> string]) -> string`:
+            - TODO
+        - `get_manifest(params: hashmap[string -> string]) -> hashmap`:
+            - TODO
+        - `get_blob(params: hashmap[string -> string]) -> bytes`:
+            - TODO
     - contact Docker Hub
         - get bearer token from Docker Registry HTTP API V2
             - send HTTP GET Request to `auth.docker.io/token`
