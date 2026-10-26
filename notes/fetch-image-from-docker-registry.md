@@ -85,10 +85,11 @@ git push origin master
         - run program:
             ```
             ./your_docker.sh run alpine:latest /bin/echo hey
+            ./your_docker.sh run alpine:latest /usr/local/bin/docker-explorer mypid
             ```
             OR
             ```
-            mydocker run alpine:latest /bin/echo hey
+            mydocker run alpine:latest /usr/local/bin/echo hey
             ```
         - terminal output printed:
             ```
