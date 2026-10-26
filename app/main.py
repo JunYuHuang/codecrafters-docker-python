@@ -9,6 +9,9 @@ import urllib.response
 import urllib.parse
 import http.client
 import json
+import io
+import gzip
+from tarfile import TarFile
 
 DOCKER_AUTH_URL = "https://auth.docker.io/token"
 DOCKER_REGISTRY_URL = "https://registry.hub.docker.com/v2/library"
@@ -146,7 +149,34 @@ def main():
     manifest_params = { "bearer_token": bearer_token, "image": image, "tag": tag }
     manifest = get_manifest(manifest_params)
 
+    # Create temp root dir for running `command`
+    command_root_dir = make_temp_root_dir(command)
+
     # TODO: Download each Docker image layer + apply it locally
+    IMAGE_LAYERS_LEN = len(manifest["layers"])
+    for layer_pos in range(IMAGE_LAYERS_LEN):
+        manifest_params["digest"] = manifest["layers"]["digest"]
+        layer_bytes = get_blob(manifest_params)
+
+        # TODO: create parent dir for layer via mkdir
+        
+        # Save layer's byte stream as `.tar.gzip` file
+        compressed_layer_path = (
+            f"{command_root_dir}{os.sep}layer_{layer_pos}.tar.gzip"
+        )
+        with open(compressed_layer_path, "wb") as compressed_layer_file:
+            compressed_layer_file.write(layer_bytes)
+
+        # Decompress layer bytes via `gzip`
+        decompressed_layer_path = (
+            f"{command_root_dir}{os.sep}layer_{layer_pos}.tar"
+        )
+        with open(decompressed_layer_path, "wb") as decompressed_layer_file:
+            decompressed_layer_bytes = gzip.decompress(layer_bytes)
+            decompressed_layer_file.write(decompressed_layer_bytes)
+        
+        # Unarchive contents of `.tar` file via `tar`
+        layer_tarfile = TarFile(name=decompressed_layer_path, mode='r')
 
 
     # Create a new PID + user namespace via `unshare()` Linux syscall
@@ -155,8 +185,7 @@ def main():
     # be the `init` process (i.e., have PID 1) in the new namespace.
     os.unshare(os.CLONE_NEWPID | os.CLONE_NEWUSER)
 
-    # Create isolated temp root dir "chroot jail" for running `command`
-    command_root_dir = make_temp_root_dir(command)
+    # Create "chroot jail" from isolated temp root dir for running `command`
     shutil.copy(command, command_root_dir)
     os.chdir(command_root_dir)
     os.chroot(command_root_dir)

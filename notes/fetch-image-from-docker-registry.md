@@ -71,6 +71,7 @@ git push origin master
             - order in which they appear in the HTTP GET Response array of JSON objects?
         - how to download a Docker image layer?
             - send HTTP GET Request with params?
+            - what if download takes unusually long?
         - how to check with a certain Docker image with a tag exists in the Docker Registry?
             - get bearer token from `auth.docker.io/token` first
             - send HTTP `GET /v2/<name>/manifests/<reference>` to Docker Registry HTTP API v2 endpoint at `registry.hub.docker.com`
