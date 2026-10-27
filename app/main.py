@@ -10,8 +10,7 @@ import urllib.parse
 import http.client
 import json
 import io
-import gzip
-from tarfile import TarFile
+import tarfile
 
 DOCKER_AUTH_URL = "https://auth.docker.io/token"
 DOCKER_REGISTRY_URL = "https://registry.hub.docker.com/v2/library"
@@ -152,13 +151,11 @@ def main():
     # Create temp root dir for running `command`
     command_root_dir = make_temp_root_dir(command)
 
-    # TODO: Download each Docker image layer + apply it locally
+    # Download each Docker image layer + apply it locally
     IMAGE_LAYERS_LEN = len(manifest["layers"])
     for layer_pos in range(IMAGE_LAYERS_LEN):
-        manifest_params["digest"] = manifest["layers"]["digest"]
+        manifest_params["digest"] = manifest["layers"][layer_pos]["digest"]
         layer_bytes = get_blob(manifest_params)
-
-        # TODO: create parent dir for layer via mkdir
         
         # Save layer's byte stream as `.tar.gzip` file
         compressed_layer_path = (
@@ -167,17 +164,12 @@ def main():
         with open(compressed_layer_path, "wb") as compressed_layer_file:
             compressed_layer_file.write(layer_bytes)
 
-        # Decompress layer bytes via `gzip`
-        decompressed_layer_path = (
-            f"{command_root_dir}{os.sep}layer_{layer_pos}.tar"
-        )
-        with open(decompressed_layer_path, "wb") as decompressed_layer_file:
-            decompressed_layer_bytes = gzip.decompress(layer_bytes)
-            decompressed_layer_file.write(decompressed_layer_bytes)
-        
-        # Unarchive contents of `.tar` file via `tar`
-        layer_tarfile = TarFile(name=decompressed_layer_path, mode='r')
+        # Extract contents of `.tar.gzip` file via `tar` to `command_root_dir` dir
+        layer_tarfile = tarfile.open(compressed_layer_path, "r:gz")
+        layer_tarfile.extractall(path=command_root_dir, filter='fully_trusted')
+        layer_tarfile.close()
 
+        os.remove(compressed_layer_path)
 
     # Create a new PID + user namespace via `unshare()` Linux syscall
     # (https://man7.org/linux/man-pages/man2/unshare.2.html).

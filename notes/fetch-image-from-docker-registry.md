@@ -80,7 +80,8 @@ git push origin master
         - Docker Registry appears to only have image manifests of type `application/vnd.oci.image.manifest.v1+json`?
             - test for Docker images `Alpine`, `Busybox`, `Ubuntu`
         - how to read and apply a Docker image layer?
-            - TODO
+            - use `tarfile` to decompress and read `.tar.gzip` compressed archive files
+            - how to extract contents of each layer's `.tar.gzip` into the temp root directory for running `command`?
 - PEDAC: Examples
     - ex.1 program execution
         - run program:
