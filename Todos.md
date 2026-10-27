@@ -7,4 +7,4 @@
 - [x] Handle exit codes
 - [x] Filesystem isolation
 - [x] Process isolation
-- [ ] Fetch an image from the Docker Registry
+- [x] Fetch an image from the Docker Registry

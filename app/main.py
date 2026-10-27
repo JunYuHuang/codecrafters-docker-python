@@ -7,7 +7,6 @@ import random
 import urllib.request
 import urllib.response
 import urllib.parse
-import http.client
 import json
 import io
 import tarfile
@@ -141,9 +140,9 @@ def main():
     # Fetch Docker image manifest based on Docker Registry HTTP API V2:
     # - https://distribution.github.io/distribution/spec/api/
     # - https://distribution.github.io/distribution/spec/auth/token/
-    docker_image_details = sys.argv[2].split(":")
-    image = docker_image_details[0]
-    tag = docker_image_details[1]
+    image_details = sys.argv[2].split(":")
+    image = image_details[0]
+    tag = "latest" if len(image_details) < 2 else image_details[1]
     bearer_token = get_bearer_token(image)
     manifest_params = { "bearer_token": bearer_token, "image": image, "tag": tag }
     manifest = get_manifest(manifest_params)
@@ -177,16 +176,26 @@ def main():
     # be the `init` process (i.e., have PID 1) in the new namespace.
     os.unshare(os.CLONE_NEWPID | os.CLONE_NEWUSER)
 
+    # Copy `command` binary and its enclosing directories to the
+    # temp root dir `commmand_root_dir`'s `/tmp` dir
+    path_segments = command.split(os.sep)[1:]
+    enclosing_dirs = ["tmp"] + path_segments[:-1]
+    command_binary = path_segments[-1]
+    path_to_binary = command_root_dir[:]
+
+    for enclosing_dir in enclosing_dirs:
+        path_to_binary += f"{os.sep}{enclosing_dir}"
+        if not os.path.exists(path_to_binary):
+            os.mkdir(path_to_binary)
+
+    shutil.copy(command, path_to_binary)
+
     # Create "chroot jail" from isolated temp root dir for running `command`
-    shutil.copy(command, command_root_dir)
     os.chdir(command_root_dir)
     os.chroot(command_root_dir)
-    command_copy_path = f".{os.sep}{command.split(os.sep)[-1]}"
 
     done_subprocess: subprocess.CompletedProcess = subprocess.run(
-        [command_copy_path, *args],
-        stdout=sys.stdout,
-        stderr=sys.stderr
+        [command_binary, *args], stdout=sys.stdout, stderr=sys.stderr
     )
 
     sys.exit(done_subprocess.returncode)
