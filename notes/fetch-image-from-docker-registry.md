@@ -1,6 +1,4 @@
-# Prompt
-
-## Your Task
+# Your Task
 
 Your docker implementation can now execute a program with a fair degree of isolation - it can't modify files or interact with processes running on the host.
 

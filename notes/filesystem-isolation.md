@@ -1,3 +1,36 @@
+# Your Task
+
+In the previous stage, we executed a program that existed locally on our machine. This program had write access to the whole filesystem, which means that it could do **dangerous** things!
+
+In this stage, you'll use [**chroot**](https://en.wikipedia.org/wiki/Chroot) to ensure that the program you execute doesn't have access to any files on the host machine. Create an empty temporary directory and `chroot` into it when executing the command. You'll need to copy the binary being executed too.
+
+Just like the previous stage, the tester will run your program like this:
+```
+mydocker run alpine:latest /usr/local/bin/docker-explorer ls /some_dir
+```
+
+## How to pass this stage
+
+### 1. Write code to pass this stage
+
+Head over to your editor / IDE and implement your solution.
+
+If you want a quick look at what functions to use or how to structure your code, we recommend looking at [**Code Examples**](https://app.codecrafters.io/courses/docker/stages/if6/code-examples).
+
+### 2. Submit code
+
+To run tests, make changes to your code and run the submit command:
+```
+codecrafters submit # Visit https://codecrafters.io/cli to install
+```
+
+To run tests, make changes to your code and run the following commands:
+```
+git add .
+git commit --allow-empty -m "[any message]"
+git push origin master
+```
+
 # Notes:
 
 - PEDAC: Problem

@@ -1,6 +1,4 @@
-# Prompt
-
-## Your Task
+# Your Task
 
 In the previous stage, we guarded against malicious activity by restricting an executable's access to the filesystem.
 

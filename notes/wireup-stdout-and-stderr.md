@@ -1,3 +1,46 @@
+# Your Task
+
+You'll now pipe the program's stdout and stderr to the parent process.
+
+## Tests
+
+The tester will run your program like this:
+```
+./your_program.sh run alpine:latest /usr/local/bin/docker-explorer echo hey
+```
+
+For now, don't worry about pulling the `alpine:latest` image. We will just execute a local program for this stage and print its output. You'll work on pulling images from Docker Hub in stage 6.
+
+[**docker-explorer**](https://github.com/codecrafters-io/docker-explorer) is a custom test program that exposes commands like `echo` and `ls`.
+
+To test this behaviour locally, you could use the `echo` + `echo_stderr` commands that `docker-explorer` exposes. Run `docker-explorer --help` to view usage.
+
+If you've got any logs or print statements in your code, make sure to remove them. The tester can't differentiate between debug logs and the actual output!
+
+Note: The **README** in your repository contains setup information for this stage and beyond (takes < 5 min).
+
+## How to pass this stage
+
+### 1. Write code to pass this stage
+
+Head over to your editor / IDE and implement your solution.
+
+If you want a quick look at what functions to use or how to structure your code, we recommend looking at [**Code Examples**](https://app.codecrafters.io/courses/docker/stages/kf3/code-examples).
+
+### 2. Submit code
+
+To run tests, make changes to your code and run the submit command:
+```
+codecrafters submit # Visit https://codecrafters.io/cli to install
+```
+
+To run tests, make changes to your code and run the following commands:
+```
+git add .
+git commit --allow-empty -m "[any message]"
+git push origin master
+```
+
 # Notes:
 
 - PEDAC: Problem
