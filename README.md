@@ -48,3 +48,8 @@ You can now execute your program like this:
 ```sh
 mydocker run alpine:latest /usr/local/bin/docker-explorer echo hey
 ```
+
+Or like this:
+```sh
+./your_docker.sh run alpine:latest /usr/local/bin/docker-explorer echo hey
+```

@@ -8,9 +8,9 @@ import urllib.request
 import urllib.response
 import urllib.parse
 import json
-import io
 import tarfile
 
+MIN_COMMAND_ARGS = 4
 DOCKER_AUTH_URL = "https://auth.docker.io/token"
 DOCKER_REGISTRY_URL = "https://registry.hub.docker.com/v2/library"
 
@@ -78,7 +78,9 @@ def get_manifest(params: dict) -> dict:
         "image" not in params or
         "tag" not in params
     ):
-        print(f"[Error] Image manifest missing API bearer token, image, and/or tag")
+        print(
+            "[Error] Image manifest missing API bearer token, image, and/or tag"
+        )
         return {}
 
     url = (
@@ -103,7 +105,9 @@ def get_manifest(params: dict) -> dict:
         ))
         return {}
     if response.status != 200:
-        print(f"[Error] Fail getting manifest with HTTP status {response.status}")
+        print(
+            f"[Error] Fail getting manifest with HTTP status {response.status}"
+        )
         return {}
     
     # Assumes each manifest pointer JSON object has `mediaType` value
@@ -134,7 +138,18 @@ def make_temp_root_dir(binary_path: str) -> str:
     return temp_root_dir
 
 def main():
+    if len(sys.argv) < MIN_COMMAND_ARGS or (sys.argv and sys.argv[1] != "run"):
+        print((
+            "[Usage]: ./your_docker.sh run " +
+            "<IMAGE>[:<TAG>] [COMMAND] [ARGUMENTS...]"
+        ))
+        return
+
     command = sys.argv[3]
+    if not os.path.exists(command):
+        print(f"[Error]: Command executable at path '{command}' does not exist")
+        return
+
     args = sys.argv[4:]
 
     # Fetch Docker image manifest based on Docker Registry HTTP API V2:
@@ -144,7 +159,9 @@ def main():
     image = image_details[0]
     tag = "latest" if len(image_details) < 2 else image_details[1]
     bearer_token = get_bearer_token(image)
-    manifest_params = { "bearer_token": bearer_token, "image": image, "tag": tag }
+    manifest_params = {
+        "bearer_token": bearer_token, "image": image, "tag": tag
+    }
     manifest = get_manifest(manifest_params)
 
     # Create temp root dir for running `command`
@@ -163,7 +180,7 @@ def main():
         with open(compressed_layer_path, "wb") as compressed_layer_file:
             compressed_layer_file.write(layer_bytes)
 
-        # Extract contents of `.tar.gzip` file via `tar` to `command_root_dir` dir
+        # Extract contents of `.tar.gzip` file via `tar`
         layer_tarfile = tarfile.open(compressed_layer_path, "r:gz")
         layer_tarfile.extractall(path=command_root_dir, filter='fully_trusted')
         layer_tarfile.close()
@@ -176,8 +193,7 @@ def main():
     # be the `init` process (i.e., have PID 1) in the new namespace.
     os.unshare(os.CLONE_NEWPID | os.CLONE_NEWUSER)
 
-    # Copy `command` binary and its enclosing directories to the
-    # temp root dir `commmand_root_dir`'s `/tmp` dir
+    # Copy `command` binary to target directory
     path_segments = command.split(os.sep)[1:]
     enclosing_dirs = ["tmp"] + path_segments[:-1]
     command_binary = path_segments[-1]
@@ -190,12 +206,17 @@ def main():
 
     shutil.copy(command, path_to_binary)
 
-    # Create "chroot jail" from isolated temp root dir for running `command`
+    # Create "chroot jail" in temp root dir to run `command`
     os.chdir(command_root_dir)
     os.chroot(command_root_dir)
 
+    command_segments = command.split(os.sep)
+    if command_segments and command_segments[0] == "":
+        command_segments.pop(0)
+    command_segments.insert(0, "tmp")
+    command_chrooted_path = f"{os.sep}" + f"{os.sep}".join(command_segments)
     done_subprocess: subprocess.CompletedProcess = subprocess.run(
-        [command_binary, *args], stdout=sys.stdout, stderr=sys.stderr
+        [command_chrooted_path, *args], stdout=sys.stdout, stderr=sys.stderr
     )
 
     sys.exit(done_subprocess.returncode)
