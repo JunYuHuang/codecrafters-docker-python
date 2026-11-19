@@ -187,12 +187,6 @@ def main():
 
         os.remove(compressed_layer_path)
 
-    # Create a new PID + user namespace via `unshare()` Linux syscall
-    # (https://man7.org/linux/man-pages/man2/unshare.2.html).
-    # First process (e.g., `command`) spawned by this main process will
-    # be the `init` process (i.e., have PID 1) in the new namespace.
-    os.unshare(os.CLONE_NEWPID | os.CLONE_NEWUSER)
-
     # Copy `command` binary to target directory
     path_segments = command.split(os.sep)[1:]
     enclosing_dirs = ["tmp"] + path_segments[:-1]
@@ -205,6 +199,12 @@ def main():
             os.mkdir(path_to_binary)
 
     shutil.copy(command, path_to_binary)
+
+    # Create a new PID + user namespace via `unshare()` Linux syscall
+    # (https://man7.org/linux/man-pages/man2/unshare.2.html).
+    # First process (e.g., `command`) spawned by this main process will
+    # be the `init` process (i.e., have PID 1) in the new namespace.
+    os.unshare(os.CLONE_NEWPID | os.CLONE_NEWUSER)
 
     # Create "chroot jail" in temp root dir to run `command`
     os.chdir(command_root_dir)
