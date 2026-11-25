@@ -137,6 +137,20 @@ def make_temp_root_dir(binary_path: str) -> str:
 
     return temp_root_dir
 
+def full_path_of(program: str) -> str:
+    if os.path.exists(program):
+        return program
+
+    paths_str = os.getenv("PATH")
+    paths_list = paths_str.split(":")
+    for path in paths_list:
+        full_path = f"{path}{os.sep}{program}"
+        if os.path.exists(full_path):
+            return full_path
+    
+    print(f"[Error]: Unknown full path of program '{program}'")
+    return ""
+
 def main():
     if len(sys.argv) < MIN_COMMAND_ARGS or (sys.argv and sys.argv[1] != "run"):
         print((
@@ -146,10 +160,13 @@ def main():
         return
 
     command = sys.argv[3]
-    if not os.path.exists(command):
+    full_command_path = full_path_of(command)
+
+    if not full_command_path:
         print(f"[Error]: Command executable at path '{command}' does not exist")
         return
-
+    
+    command = full_command_path
     args = sys.argv[4:]
 
     # Fetch Docker image manifest based on Docker Registry HTTP API V2:
