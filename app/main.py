@@ -130,10 +130,11 @@ def make_temp_root_dir(binary_path: str) -> str:
     if len(binary_path) > 0:
         binary_name = binary_path.split(os.sep)[-1]
         dir_name = f"container-{binary_name}"
-    
+
     temp_root_dir = f"{os.sep}tmp{os.sep}{dir_name}"
-    if not os.path.exists(temp_root_dir):
-        os.mkdir(temp_root_dir)
+    if os.path.exists(temp_root_dir):
+        shutil.rmtree(temp_root_dir)
+    os.mkdir(temp_root_dir)
 
     return temp_root_dir
 
